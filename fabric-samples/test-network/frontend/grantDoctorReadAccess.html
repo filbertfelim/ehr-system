@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Patient - EMR Management System</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>EMR Management System</h1>
+        <h2>Patient's Page</h2>
+      </header>
+      <nav>
+        <ul>
+          <li>
+            <a href="getDoctorEmailWithAccess.html"
+              >Get Doctors With EMR Access</a
+            >
+          </li>
+          <li>
+            <a href="getPatientEmr.html">Get Patient's EMR</a>
+          </li>
+          <li><a href="grantDoctorReadAccess.html">Grant Read Access</a></li>
+          <li>
+            <a href="grantDoctorReadWriteAccess.html"
+              >Grant Read-Write Access</a
+            >
+          </li>
+          <li>
+            <a href="revokeDoctorWriteAccess.html">Revoke Write Access</a>
+          </li>
+          <li>
+            <a href="revokeDoctorReadWriteAccess.html"
+              >Revoke Read-Write Access</a
+            >
+          </li>
+        </ul>
+      </nav>
+
+      <!-- Grant Doctor Access Forms -->
+      <div class="form-container">
+        <h3>Grant Doctor Read Access</h3>
+        <form id="grantDoctorAccessForm">
+          <input
+            type="email"
+            id="patientEmailGrant"
+            placeholder="Your Email"
+            required
+          />
+          <input
+            type="email"
+            id="doctorEmailGrant"
+            placeholder="Doctor's Email"
+            required
+          />
+          <button type="submit" id="grantDoctorAccessBtn">
+            Grant Read Access
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Success/Error Popup -->
+    <div id="popup" class="popup">
+      <div class="popup-content">
+        <span id="popup-close" class="popup-close">&times;</span>
+        <p id="popup-message"></p>
+      </div>
+    </div>
+
+    <script>
+      // Disable button during AJAX request and show loading state
+      function disableButton(buttonId) {
+        const button = document.getElementById(buttonId);
+        button.disabled = true;
+        button.innerHTML = "Loading...";
+      }
+
+      // Enable button after AJAX response
+      function enableButton(buttonId, originalText) {
+        const button = document.getElementById(buttonId);
+        button.disabled = false;
+        button.innerHTML = originalText;
+      }
+
+      // Show popup with message
+      function showPopup(message, color) {
+        $("#popup-message").text(message);
+        $("#popup").css("display", "block");
+        $("#popup-message").css("color", color);
+      }
+
+      // Close popup when clicking the close button
+      $("#popup-close").click(function () {
+        $("#popup").css("display", "none");
+      });
+
+      // Close popup when clicking outside the popup content
+      window.onclick = function (event) {
+        if (event.target == document.getElementById("popup")) {
+          $("#popup").css("display", "none");
+        }
+      };
+
+      $("#grantDoctorAccessForm").submit(function (event) {
+        event.preventDefault();
+
+        let patientEmail = $("#patientEmailGrant").val();
+        let doctorEmail = $("#doctorEmailGrant").val();
+        const originalText = $("#grantDoctorAccessBtn").text();
+
+        disableButton("grantDoctorAccessBtn");
+
+        $.ajax({
+          url: "http://localhost:3000/patient/grantDoctorReadAccess",
+          type: "POST",
+          contentType: "application/json",
+          data: JSON.stringify({
+            patientEmail,
+            doctorEmail,
+          }),
+          success: function (response) {
+            if (response.startsWith("Error")) {
+              showPopup(response, "red");
+            } else {
+              showPopup("Success: " + response, "green");
+            }
+            enableButton("grantDoctorAccessBtn", originalText);
+          },
+          error: function (xhr, status, error) {
+            showPopup("Error: " + error, "red");
+            enableButton("grantDoctorAccessBtn", originalText);
+          },
+        });
+      });
+    </script>
+
+    <style>
+      /* General Styles */
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f4;
+        margin: 0;
+        padding: 0;
+      }
+
+      header {
+        background-color: #1e90ff;
+        color: white;
+        text-align: center;
+        padding: 20px;
+      }
+
+      h1,
+      h2 {
+        margin: 0;
+      }
+
+      .container {
+        max-width: 800px;
+        margin: 20px auto;
+        padding: 20px;
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+      }
+
+      /* Navigation Bar Styles */
+      nav {
+        background-color: #1e90ff;
+        padding: 10px;
+      }
+
+      nav ul {
+        list-style-type: none;
+        padding: 0;
+        display: flex;
+        flex-wrap: wrap; /* Allow wrapping of items into two rows */
+        justify-content: space-evenly; /* Space buttons evenly */
+      }
+
+      nav ul li {
+        display: inline-block;
+        margin: 5px;
+        width: calc(50% - 10px);
+        text-align: center;
+      }
+
+      nav ul li a {
+        color: white;
+        text-decoration: none;
+        font-size: 1.2rem;
+        padding: 10px;
+        display: block;
+        border-radius: 5px;
+      }
+
+      nav ul li a:hover {
+        background-color: #45a049;
+        border-radius: 5px;
+      }
+
+      .form-container {
+        margin-bottom: 30px;
+      }
+
+      form {
+        display: flex;
+        flex-direction: column;
+      }
+
+      input,
+      textarea {
+        margin: 10px 0;
+        padding: 10px;
+        font-size: 1rem;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+      }
+
+      button {
+        padding: 10px;
+        font-size: 1rem;
+        background-color: #4caf50;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+
+      button:hover {
+        background-color: #45a049;
+      }
+
+      .file-input {
+        margin-top: 10px;
+      }
+
+      .popup {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.4);
+        z-index: 999;
+      }
+
+      .popup-content {
+        background-color: white;
+        margin: 15% auto;
+        padding: 20px;
+        border-radius: 10px;
+        width: 80%;
+        max-width: 400px;
+        text-align: center;
+      }
+
+      .popup-close {
+        color: #aaa;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+      }
+
+      .popup-close:hover,
+      .popup-close:focus {
+        color: black;
+        text-decoration: none;
+        cursor: pointer;
+      }
+
+      .emr-box {
+        border: 1px solid #ccc;
+        margin-bottom: 20px;
+        padding: 10px;
+        border-radius: 5px;
+        background-color: #f9f9f9;
+      }
+
+      #emrList {
+        max-height: 400px;
+        overflow-y: auto;
+      }
+    </style>
+  </body>
+</html>

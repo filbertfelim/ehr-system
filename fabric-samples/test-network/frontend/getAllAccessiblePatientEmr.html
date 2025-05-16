@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Doctor - EMR Management System</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>EMR Management System</h1>
+        <h2>Doctor's Page</h2>
+      </header>
+      <nav>
+        <ul>
+          <li>
+            <a href="getPatientEmailWithAccess.html"
+              >Get Patients EMR's Access</a
+            >
+          </li>
+          <li>
+            <a href="getAllAccessiblePatientEmr.html">Get Patient's EMR</a>
+          </li>
+          <li><a href="addNewEmr.html">Add New EMR</a></li>
+        </ul>
+      </nav>
+
+      <!-- Get Patient's EMR Form -->
+      <div class="form-container">
+        <h3>Get Patient's EMR</h3>
+        <form id="getPatientEmrForm">
+          <input
+            type="email"
+            id="doctorEmail"
+            placeholder="Doctor's Email"
+            required
+          />
+          <input
+            type="email"
+            id="patientEmail"
+            placeholder="Patient's Email"
+            required
+          />
+          <button type="submit" id="getEmrBtn">Get EMR</button>
+        </form>
+        <div id="getEmrResult" class="result-container"></div>
+      </div>
+
+      <div id="emrListContainer" class="form-container" style="display: none">
+        <h3>Patient's EMRs</h3>
+        <div id="emrList"></div>
+        <!-- EMRs will be dynamically loaded here -->
+      </div>
+    </div>
+
+    <!-- Success/Error Popup -->
+    <div id="popup" class="popup">
+      <div class="popup-content">
+        <span id="popup-close" class="popup-close">&times;</span>
+        <p id="popup-message"></p>
+      </div>
+    </div>
+
+    <script>
+      // Disable button during AJAX request and show loading state
+      function disableButton(buttonId) {
+        const button = document.getElementById(buttonId);
+        button.disabled = true;
+        button.innerHTML = "Loading...";
+      }
+
+      // Enable button after AJAX response
+      function enableButton(buttonId, originalText) {
+        const button = document.getElementById(buttonId);
+        button.disabled = false;
+        button.innerHTML = originalText;
+      }
+
+      // Show popup with message
+      function showPopup(message, color) {
+        $("#popup-message").text(message);
+        $("#popup").css("display", "block");
+        $("#popup-message").css("color", color);
+      }
+
+      // Close popup when clicking the close button
+      $("#popup-close").click(function () {
+        $("#popup").css("display", "none");
+      });
+
+      // Close popup when clicking outside the popup content
+      window.onclick = function (event) {
+        if (event.target == document.getElementById("popup")) {
+          $("#popup").css("display", "none");
+        }
+      };
+
+      // Handle Get Patient's EMR Form submission
+      $("#getPatientEmrForm").submit(function (event) {
+        event.preventDefault();
+
+        let doctorEmail = $("#doctorEmail").val();
+        let patientEmail = $("#patientEmail").val();
+        const originalText = $("#getEmrBtn").text();
+
+        disableButton("getEmrBtn");
+
+        $.ajax({
+          url: "http://localhost:3000/doctor/getAllAccessiblePatientEmr",
+          type: "POST",
+          contentType: "application/json",
+          data: JSON.stringify({ doctorEmail, patientEmail }),
+          success: function (response) {
+            if (response.startsWith("Error")) {
+              showPopup(response, "red");
+            } else {
+              const emrs = JSON.parse(response); // Parse the response as JSON
+
+              if (emrs.length === 0) {
+                $("#getEmrResult").html(
+                  `No EMR records found for patient: ${patientEmail}`
+                );
+              } else {
+                console.log(emrs);
+                // Show the EMR list
+                $("#emrListContainer").show();
+                let emrListHtml = "";
+
+                emrs.forEach((emr) => {
+                  const imageUrl = `https://plum-permanent-wasp-625.mypinata.cloud/files/${emr.imageHash}`;
+                  emrListHtml += `
+                      <div class="emr-box">
+                        <p><strong>EMR ID:</strong> ${emr.id}</p>
+                        <p><strong>Doctor:</strong> ${emr.adderEmail}</p>
+                        <p><strong>Description:</strong> ${emr.description}</p>
+                        <p><strong>Image Preview:</strong><br><img src="${imageUrl}" alt="EMR Image" style="max-width: 200px; border-radius: 5px;"></p>
+                      </div>
+                    `;
+                });
+
+                $("#emrList").html(emrListHtml);
+              }
+            }
+            enableButton("getEmrBtn", originalText);
+          },
+          error: function (xhr, status, error) {
+            showPopup("Error: " + error, "red");
+            enableButton("getEmrBtn", originalText);
+          },
+        });
+      });
+    </script>
+
+    <style>
+      /* General Styles */
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f4;
+        margin: 0;
+        padding: 0;
+      }
+
+      header {
+        background-color: #1e90ff;
+        color: white;
+        text-align: center;
+        padding: 20px;
+      }
+
+      h1,
+      h2 {
+        margin: 0;
+      }
+
+      .container {
+        max-width: 800px;
+        margin: 20px auto;
+        padding: 20px;
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+      }
+
+      nav {
+        background-color: #1e90ff;
+        padding: 10px;
+      }
+
+      nav ul {
+        list-style-type: none;
+        padding: 0;
+        display: flex;
+        justify-content: space-around;
+      }
+
+      nav ul li {
+        display: inline;
+      }
+
+      nav ul li a {
+        color: white;
+        text-decoration: none;
+        font-size: 1.2rem;
+        padding: 10px;
+      }
+
+      nav ul li a:hover {
+        background-color: #45a049;
+        border-radius: 5px;
+      }
+
+      .form-container {
+        margin-bottom: 30px;
+      }
+
+      form {
+        display: flex;
+        flex-direction: column;
+      }
+
+      input,
+      textarea {
+        margin: 10px 0;
+        padding: 10px;
+        font-size: 1rem;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+      }
+
+      button {
+        padding: 10px;
+        font-size: 1rem;
+        background-color: #4caf50;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+
+      button:hover {
+        background-color: #45a049;
+      }
+
+      .file-input {
+        margin-top: 10px;
+      }
+
+      .popup {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.4);
+        z-index: 999;
+      }
+
+      .popup-content {
+        background-color: white;
+        margin: 15% auto;
+        padding: 20px;
+        border-radius: 10px;
+        width: 80%;
+        max-width: 400px;
+        text-align: center;
+      }
+
+      .popup-close {
+        color: #aaa;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+      }
+
+      .popup-close:hover,
+      .popup-close:focus {
+        color: black;
+        text-decoration: none;
+        cursor: pointer;
+      }
+
+      .emr-box {
+        border: 1px solid #ccc;
+        margin-bottom: 20px;
+        padding: 10px;
+        border-radius: 5px;
+        background-color: #f9f9f9;
+      }
+
+      #emrList {
+        max-height: 400px;
+        overflow-y: auto;
+      }
+    </style>
+  </body>
+</html>
